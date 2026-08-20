@@ -2495,11 +2495,10 @@ function renderJoinSheet(){
     <div class="sheet-handle"></div>
     <h2 style="font-size:16px; margin:0 0 4px 0;">What's your group called?</h2>
     <p style="font-size:12.5px; color:var(--text-dim); margin:0 0 4px 0;">
-      Everyone who enters the same group name shares one order list — type exactly
-      what everyone else in your group will type.
+      Choose a Unique Name or number, Share it with friends to all add to the same order.
     </p>
     <label class="field-label">Group name</label>
-    <input class="join-name-input" type="text" placeholder="e.g. Rose Table 4" value="${escapeHtml(joinInput)}"
+    <input class="join-name-input" type="text" placeholder="e.g. The Bad Decisions Group" value="${escapeHtml(joinInput)}"
       oninput="joinInput=this.value" onkeydown="if(event.key==='Enter')confirmJoin()">
     <button class="btn-primary" onclick="confirmJoin()">Start ordering</button>
     <p class="join-sheet-or">— or —</p>
