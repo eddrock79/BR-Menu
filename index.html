@@ -2597,7 +2597,7 @@ function renderSentScreen(){
   return `<div class="sent-shell">
     <div class="sent-check">✓</div>
     <p class="sent-eyebrow">Order Sent</p>
-    <p class="sent-instruction">Please make your way to the bar</p>
+    <p class="sent-instruction">Please confirm your order at the bar!</p>
     <h1 class="sent-groupname"${nameSize?` style="font-size:${nameSize};"`:''}>${escapeHtml(tableLabel)}</h1>
     ${count ? `<p class="sent-sub">${count} item${count===1?'':'s'} · ${money(snap.total)}</p>` : ''}
     ${breakdown}
