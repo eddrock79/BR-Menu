@@ -612,6 +612,8 @@
   .ordering-banner-copy{
     position:relative; z-index:1; display:block;
   }
+  .kitchen-banner{margin-top:-4px}
+  .kitchen-banner.closed{padding-top:11px;padding-bottom:11px;font-size:14.5px;font-weight:500;color:#C9BFBE}
   .orders-toggle{
     border:1px solid var(--success); border-radius:9px; padding:9px 13px;
     background:rgba(76,140,107,0.15); color:#9DD3B7; font-family:'Oswald',sans-serif;
@@ -2912,6 +2914,12 @@ function selectGroup(g){
   if(first) activeCat = first.id;
   render();
 }
+/* Kitchen hours: notice from 8:30pm, food hidden from customers from 9pm until 6am (UK time, whatever the phone's clock zone). */
+function ukMinutes(){try{const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());return (+p.find(x=>x.type==='hour').value)*60+(+p.find(x=>x.type==='minute').value);}catch(e){const d=new Date();return d.getHours()*60+d.getMinutes();}}
+function kitchenState(){const q=(location.search.match(/[?&]kitchen=(open|closing|closed)/)||[])[1];if(q)return q;const m=ukMinutes();if(m>=21*60||m<6*60)return 'closed';if(m>=20*60+30)return 'closing';return 'open';}
+function foodHidden(){return kitchenState()==='closed';}
+let lastKitchenState=kitchenState();
+setInterval(()=>{const s=kitchenState();if(s!==lastKitchenState){lastKitchenState=s;if(typeof mode==='undefined'||mode==='browse'){try{render();}catch(e){}}}},30000);   // customers only: never re-draws a staff screen
 function categoriesInGroup(g){
   return menu.categories.filter(c=> g==='drink' ? (c.group==='drink' || !c.group) : c.group===g);
 }
@@ -3172,6 +3180,14 @@ function renderBrowseView(){
   if(!menu.categories.length){ return '<div class="empty-state">No menu items yet.</div>'; }
   let h = '';
   h += `<div class="ordering-closed-banner"><span class="ordering-banner-kicker">Order at the bar</span><span class="ordering-banner-copy">Build your list here, then show it to the bar staff.</span></div>`;
+  const ks = kitchenState();
+  if(ks==='closing') h += `<div class="ordering-closed-banner kitchen-banner"><span class="ordering-banner-kicker">Kitchen closes at 9pm</span><span class="ordering-banner-copy">Last chance for food: order at the bar before 9pm.</span></div>`;
+  if(ks==='closed') h += `<div class="ordering-closed-banner kitchen-banner closed"><span class="ordering-banner-copy">The kitchen is closed for tonight. Food is served until 9pm.</span></div>`;
+  if(ks==='closed'){
+    if(activeGroup==='food') activeGroup='drink';
+    const ac = menu.categories.find(c=>c.id===activeCat);
+    if(ac && ac.group==='food'){ const first = categoriesInGroup('drink')[0]; if(first) activeCat = first.id; }
+  }
   h += `<div class="toolbar">
     <button class="members-banner ${hasMembersCardImage ? '' : 'members-banner-solo'}" onclick="selectCat('members')">
       <span class="mb-text">
@@ -3208,7 +3224,7 @@ function renderBrowseView(){
 
   if(!query.trim()){
     h += '<div class="group-toggle">';
-    [['drink','Drinks'],['food','Food'],['members','Members']].forEach(([g,label])=>{
+    [['drink','Drinks'],['food','Food'],['members','Members']].filter(([g])=>!(g==='food'&&ks==='closed')).forEach(([g,label])=>{
       h += `<button class="group-toggle-btn ${activeGroup===g?'active':''}" onclick="selectGroup('${g}')">${label}</button>`;
     });
     h += '</div>';
@@ -3221,7 +3237,7 @@ function renderBrowseView(){
   h += '</div>';
 
   if(query.trim()){
-    const results = searchAllItems(query);
+    const results = searchAllItems(query).filter(({item})=>{ if(ks!=='closed') return true; const c=menu.categories.find(cc=>cc.items.includes(item)); return !(c && c.group==='food'); });
     if(!results.length) h += `<div class="empty-state">Nothing matches your search.</div>`;
     else results.forEach(({item,catName})=>{ h += itemCardHtml(item,catName); });
   } else {
